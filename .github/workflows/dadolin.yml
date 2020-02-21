@@ -1,0 +1,12 @@
+name: A workflow for DEPLOY
+on: [push]
+
+jobs:                                                                                            
+  test-hado:                                                                                         
+    name: deploy                                                                     
+    runs-on: ubuntu-latest                                                                       
+    steps:
+      - name: copy source application
+        uses: actions/checkout@v2
+      - name: install docker  
+        run: curl -sSL https://get.docker.com | sh
