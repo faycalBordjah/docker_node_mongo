@@ -12,3 +12,28 @@ jobs:
         run: curl -sSL https://get.docker.com | sh
       - name: install hadolint from docker 
         run: docker run --rm -i hadolint/hadolint < Dockerfile
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: copy source
+      uses: actions/checkout@v2
+    - name: install docker
+      run: curl -sSL https://get.docker.com/ | sh
+    - name: Login to Github Registry
+      run: echo ${{ github.token }} | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+    - name: Get the version
+      id: vars
+      run: echo ::set-output name=tag::$(echo ${GITHUB_REF:10})
+    - name: Build the tagged PHP image
+      run: docker build . --file Dockerfile --target=php -t docker.pkg.github.com/${{ github.repository }}/php:${{steps.vars.outputs.tag}}
+    - name: Build the tagged NGINX image
+      run: docker build . --file Dockerfile --target=nginx -t docker.pkg.github.com/${{ github.repository }}/nginx:${{steps.vars.outputs.tag}}
+    - name: Publish images to Github Registry
+      run: |
+        PHP_ID=docker.pkg.github.com/${{ github.repository }}/php
+        NGINX_ID=docker.pkg.github.com/${{ github.repository }}/nginx
+        docker push $PHP_ID:${{steps.vars.outputs.tag}}
+        docker push $NGINX_ID:${{steps.vars.outputs.tag}}
+        docker push $PHP_ID:latest
+        docker push $NGINX_ID:latest
